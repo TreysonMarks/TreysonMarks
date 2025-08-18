@@ -1,6 +1,6 @@
 - 👋 Hi, I’m @TreysonMarks
 - 👀 I’m interested in ...
-- 🌱 I’m currently learning Java.
+- 🌱 I’m currently learning Cursor.
 - 💞️ I’m looking to collaborate on ... Not sure yet.
 - 📫 How to reach me ...
 
