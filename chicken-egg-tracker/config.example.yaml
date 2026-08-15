@@ -1,0 +1,51 @@
+# Copy this to config.yaml and edit for your coop.
+# All pixel coordinates refer to the camera frame at the width/height below.
+
+camera:
+  # picamera2         -> Raspberry Pi camera module (use this in the coop)
+  # opencv:0          -> a USB webcam
+  # file:sample.mp4   -> loop a video file (handy for testing on a laptop)
+  # image:coop.jpg    -> repeat a single still image
+  source: "picamera2"
+  width: 1280
+  height: 720
+  fps: 5              # a few frames per second is plenty and easy on the Pi
+  rotate: 0           # 0, 90, 180 or 270 if the camera is mounted sideways
+
+processing:
+  process_every_n_frames: 1
+  min_band_pixels: 60         # min colored-band pixels before we trust an ID
+
+  presence:
+    enter_ratio: 0.06         # fraction of a box that must change to mean "hen here"
+    enter_frames: 3           # frames above the ratio before we call it occupied
+    exit_frames: 5            # frames below it before we call her gone
+    settle_frames: 8          # calm frames after she leaves before counting eggs
+    min_visit_frames: 4       # ignore fly-throughs shorter than this
+
+  egg:
+    min_area: 400             # smallest egg blob, in pixels (tune per camera height)
+    max_area: 20000           # largest egg blob
+    min_aspect: 0.5           # egg bounding-box width/height
+    max_aspect: 1.6
+    brightness_thresh: 170    # eggs are lighter than bedding; raise if bedding is pale
+    circularity_min: 0.55     # 1.0 is a perfect circle; eggs are ~0.6–0.9
+
+storage:
+  db_path: "data/eggs.db"
+  snapshot_dir: "data/snapshots"
+  save_snapshots: true        # save a crop of each confirmed egg for verification
+
+dashboard:
+  host: "0.0.0.0"             # 0.0.0.0 lets other devices on your network connect
+  port: 8080
+
+# One rectangle per nesting box: [x, y, width, height] in pixels.
+# Use calibrate.py to find these. You said you can see all 3 boxes from one angle.
+zones:
+  - name: "box-1"
+    rect: [120, 220, 300, 300]
+  - name: "box-2"
+    rect: [460, 220, 300, 300]
+  - name: "box-3"
+    rect: [800, 220, 300, 300]

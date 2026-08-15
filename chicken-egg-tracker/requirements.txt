@@ -1,0 +1,10 @@
+# Core dependencies (install on the Raspberry Pi and on any dev machine).
+numpy>=1.24
+opencv-python-headless>=4.8   # use plain opencv-python if you want GUI windows
+Flask>=3.0
+PyYAML>=6.0
+
+# Raspberry Pi camera module support. Installed separately because the wheel is
+# ARM/Pi specific — on Raspberry Pi OS the system package is best:
+#   sudo apt install -y python3-picamera2
+# so it is intentionally left out of this file.

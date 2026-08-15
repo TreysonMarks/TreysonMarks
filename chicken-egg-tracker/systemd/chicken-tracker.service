@@ -1,0 +1,15 @@
+[Unit]
+Description=Coop Tracker — capture loop (who laid which egg)
+After=network-online.target
+
+[Service]
+Type=simple
+# Adjust User and paths to match your Pi.
+User=pi
+WorkingDirectory=/home/pi/chicken-egg-tracker
+ExecStart=/usr/bin/python3 run.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

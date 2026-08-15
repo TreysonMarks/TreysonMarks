@@ -1,0 +1,31 @@
+# Copy this to chickens.yaml and list your mom's hens.
+#
+# Each hen needs one or more HSV color ranges describing her leg band. Use
+# `python calibrate.py sample-band ...` on a snapshot to generate these — it
+# prints a ready-to-paste block. HSV in OpenCV is: H 0–179, S 0–255, V 0–255.
+#
+# Tips:
+#   * Give each hen a clearly different band color; similar colors will be
+#     confused (e.g. avoid pairing orange with red, or teal with green).
+#   * Red straddles the ends of the hue circle, so red bands need TWO ranges.
+
+chickens:
+  - name: "Henrietta"
+    band: "red"
+    hsv_ranges:
+      - lower: [0, 120, 70]
+        upper: [10, 255, 255]
+      - lower: [169, 120, 70]
+        upper: [179, 255, 255]
+
+  - name: "Nugget"
+    band: "blue"
+    hsv_ranges:
+      - lower: [100, 120, 70]
+        upper: [130, 255, 255]
+
+  - name: "Marshmallow"
+    band: "green"
+    hsv_ranges:
+      - lower: [40, 80, 70]
+        upper: [80, 255, 255]

@@ -1,0 +1,18 @@
+# Your live config (copied from the .example files) stays local.
+config.yaml
+chickens.yaml
+
+# Runtime data: database, snapshots, calibration captures.
+data/
+*.db
+*.jpg
+*.jpeg
+*.png
+*.mp4
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
