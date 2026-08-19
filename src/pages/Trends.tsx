@@ -18,6 +18,7 @@ import { useProfile } from '../hooks/useProfile'
 import { useTrends } from '../hooks/useTrends'
 import { shortDay } from '../lib/date'
 import Spinner from '../components/Spinner'
+import BodyComposition from '../components/BodyComposition'
 
 const RANGES = [7, 14, 30] as const
 
@@ -193,6 +194,8 @@ export default function Trends() {
               </ResponsiveContainer>
             )}
           </ChartCard>
+
+          <BodyComposition />
         </>
       )}
     </div>

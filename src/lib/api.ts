@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import type {
+  BodyMeasurement,
   Category,
   ExerciseEntry,
   FoodEntry,
@@ -323,6 +324,45 @@ export async function createWorkout(userId: string, w: NewWorkout): Promise<Work
 export async function deleteWorkout(id: string): Promise<void> {
   const { error } = await client().from('workouts').delete().eq('id', id)
   if (error) throw error
+}
+
+// ---------- body measurements ----------
+export async function fetchBodyMeasurements(
+  userId: string,
+  fromDate?: string,
+): Promise<BodyMeasurement[]> {
+  let q = client().from('body_measurements').select('*').eq('user_id', userId)
+  if (fromDate) q = q.gte('date', fromDate)
+  const { data, error } = await q.order('date', { ascending: true })
+  if (error) throw error
+  return (data ?? []) as BodyMeasurement[]
+}
+
+export async function addBodyMeasurement(
+  entry: Omit<BodyMeasurement, 'id' | 'created_at'>,
+): Promise<BodyMeasurement> {
+  const { data, error } = await client()
+    .from('body_measurements')
+    .insert(entry)
+    .select()
+    .single()
+  if (error) throw error
+  return data as BodyMeasurement
+}
+
+export async function deleteBodyMeasurement(id: string): Promise<void> {
+  const { error } = await client().from('body_measurements').delete().eq('id', id)
+  if (error) throw error
+}
+
+// ---------- bulk food import (CSV) ----------
+export async function importFood(
+  entries: Omit<FoodEntry, 'id' | 'created_at'>[],
+): Promise<number> {
+  if (entries.length === 0) return 0
+  const { error } = await client().from('food_entries').insert(entries)
+  if (error) throw error
+  return entries.length
 }
 
 // ---------- plan: weekly template ----------

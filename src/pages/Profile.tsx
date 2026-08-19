@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useProfile } from '../hooks/useProfile'
 import { useCategories } from '../hooks/useCategories'
+import CsvImport from '../components/CsvImport'
 import { supabase } from '../lib/supabase'
 import { clearConfig } from '../lib/config'
 import { useAuth } from '../context/AuthContext'
@@ -275,6 +276,11 @@ export default function ProfilePage() {
           ))}
         </div>
         <CategoryAdder onAdd={categories.add} />
+      </div>
+
+      {/* Data import */}
+      <div className="card">
+        <CsvImport />
       </div>
 
       <div className="flex items-center gap-3">

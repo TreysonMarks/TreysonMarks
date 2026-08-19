@@ -197,6 +197,20 @@ export interface WeightLog {
   created_at?: string
 }
 
+export interface BodyMeasurement {
+  id: string
+  user_id: string
+  date: string
+  weight_kg: number | null
+  body_fat_pct: number | null
+  skeletal_muscle_kg: number | null
+  body_fat_mass_kg: number | null
+  visceral_fat: number | null
+  bmr: number | null
+  notes: string | null
+  created_at?: string
+}
+
 export interface DayTotals {
   intake: number
   exercise: number

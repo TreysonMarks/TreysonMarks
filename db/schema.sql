@@ -174,6 +174,23 @@ create table if not exists public.planned_workouts (
 create index if not exists planned_workouts_user_date_idx
   on public.planned_workouts (user_id, date);
 
+-- ---------- body measurements (InBody etc.) ----------
+create table if not exists public.body_measurements (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  date date not null,
+  weight_kg numeric,
+  body_fat_pct numeric,
+  skeletal_muscle_kg numeric,
+  body_fat_mass_kg numeric,
+  visceral_fat numeric,
+  bmr numeric,
+  notes text,
+  created_at timestamptz not null default now()
+);
+create index if not exists body_measurements_user_date_idx
+  on public.body_measurements (user_id, date);
+
 -- ---------- Row Level Security ----------
 alter table public.profiles enable row level security;
 alter table public.food_entries enable row level security;
@@ -186,6 +203,7 @@ alter table public.workouts enable row level security;
 alter table public.workout_exercises enable row level security;
 alter table public.plan_days enable row level security;
 alter table public.planned_workouts enable row level security;
+alter table public.body_measurements enable row level security;
 
 -- Reusable policy pattern: a user may only touch rows they own.
 do $$
@@ -195,7 +213,7 @@ begin
   foreach t in array array[
     'profiles','food_entries','exercise_entries','weight_logs',
     'categories','supplements','supplement_logs','workouts','workout_exercises',
-    'plan_days','planned_workouts'
+    'plan_days','planned_workouts','body_measurements'
   ]
   loop
     execute format('drop policy if exists "own_select" on public.%I;', t);

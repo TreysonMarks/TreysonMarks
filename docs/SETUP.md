@@ -103,7 +103,11 @@ Supabase's redirect URLs (step 2).
     personal-record feed. Calorie burn serves the deficit goal; the training
     log serves the getting-stronger goal.
 - **Trends** — 7/14/30-day intake vs. burn, daily net, macros/day, calories by
-  category, and weight with a 7-day average.
+  category, weight with a 7-day average, and a **body composition** card for
+  InBody-style measurements (body fat %, skeletal muscle, visceral fat, BMR).
+- **Profile → Import** — bring in history from a spreadsheet: export it as CSV,
+  upload or paste it, map the columns (date, calories, protein, carbs, fat…),
+  and import as food entries.
 - **Supplements** — define supplements with a dose and cadence (daily, weekly,
   etc.); the app shows what's due, overdue, or on track, and one tap logs a dose.
   Good for a weekly shot, daily creatine, vitamins, and so on.

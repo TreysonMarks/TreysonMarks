@@ -6,6 +6,7 @@
   "description": "Personal calorie ledger — track intake, burn, and net against a TDEE-based goal.",
   "scripts": {
     "dev": "vite",
+    "dev:host": "vite --host",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "lint": "tsc --noEmit"

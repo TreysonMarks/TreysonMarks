@@ -34,7 +34,7 @@ export default function AddFood({ categories, aiAvailable, onAdd, onAddMany }: P
   return (
     <div className="card space-y-4">
       <div className="flex gap-1 rounded-xl border border-base-border p-1">
-        <TabBtn active={mode === 'ai'} onClick={() => setMode('ai')} disabled={!aiAvailable}>
+        <TabBtn active={mode === 'ai'} onClick={() => setMode('ai')}>
           ✨ Describe
         </TabBtn>
         <TabBtn active={mode === 'manual'} onClick={() => setMode('manual')}>
@@ -45,6 +45,7 @@ export default function AddFood({ categories, aiAvailable, onAdd, onAddMany }: P
       {mode === 'ai' ? (
         <AiMode
           categories={categories}
+          aiAvailable={aiAvailable}
           onAddMany={onAddMany}
           onDone={() => setOpen(false)}
         />
@@ -86,10 +87,12 @@ function TabBtn({
 
 function AiMode({
   categories,
+  aiAvailable,
   onAddMany,
   onDone,
 }: {
   categories: string[]
+  aiAvailable: boolean
   onAddMany: (items: ParsedFood[]) => Promise<void>
   onDone: () => void
 }) {
@@ -157,6 +160,12 @@ function AiMode({
 
   return (
     <div className="space-y-3">
+      {!aiAvailable && (
+        <p className="rounded-lg border border-warn/40 bg-warn/10 px-3 py-2 text-xs text-warn">
+          Add your Anthropic API key in <b>Profile → AI food parsing</b> and hit Save to enable
+          this. Until then, use the Manual tab.
+        </p>
+      )}
       <textarea
         autoFocus
         className="input min-h-[90px]"
