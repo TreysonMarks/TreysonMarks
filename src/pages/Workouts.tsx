@@ -20,24 +20,45 @@ import {
   weeklyVolume,
 } from '../lib/strength'
 import { prettyDay, shortDay } from '../lib/date'
-import type { WorkoutExercise, WorkoutWithExercises } from '../lib/types'
+import type { ParsedExercise, WorkoutExercise, WorkoutType, WorkoutWithExercises } from '../lib/types'
 import Spinner from '../components/Spinner'
 import LogWorkout from '../components/LogWorkout'
+import PlanView from '../components/PlanView'
 
-type Tab = 'history' | 'progress'
+type Tab = 'plan' | 'history' | 'progress'
+
+interface LogInitial {
+  title: string
+  type: WorkoutType
+  date: string
+  exercises: ParsedExercise[]
+}
 
 export default function Workouts() {
-  const { workouts, loading, create, remove } = useWorkouts()
+  const { workouts, loading, create, remove, reload } = useWorkouts()
   const { profile } = useProfile()
-  const [tab, setTab] = useState<Tab>('history')
+  const [tab, setTab] = useState<Tab>('plan')
   const [logging, setLogging] = useState(false)
+  const [logInitial, setLogInitial] = useState<LogInitial | undefined>(undefined)
   const aiAvailable = Boolean(profile?.anthropic_key)
+
+  function openLog(initial?: LogInitial) {
+    setLogInitial(initial)
+    setLogging(true)
+  }
+  function closeLog() {
+    setLogging(false)
+    setLogInitial(undefined)
+  }
 
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-bold">Workouts</h1>
-        <button className="btn-primary px-3 py-1.5 text-sm" onClick={() => setLogging((s) => !s)}>
+        <button
+          className="btn-primary px-3 py-1.5 text-sm"
+          onClick={() => (logging ? closeLog() : openLog())}
+        >
           {logging ? 'Close' : '+ Log'}
         </button>
       </div>
@@ -45,12 +66,19 @@ export default function Workouts() {
       {logging && (
         <LogWorkout
           aiAvailable={aiAvailable}
-          onSave={create}
-          onClose={() => setLogging(false)}
+          initial={logInitial}
+          onSave={async (w) => {
+            await create(w)
+            await reload()
+          }}
+          onClose={closeLog}
         />
       )}
 
       <div className="flex gap-1 rounded-xl border border-base-border p-1">
+        <TabBtn active={tab === 'plan'} onClick={() => setTab('plan')}>
+          Plan
+        </TabBtn>
         <TabBtn active={tab === 'history'} onClick={() => setTab('history')}>
           History
         </TabBtn>
@@ -59,7 +87,15 @@ export default function Workouts() {
         </TabBtn>
       </div>
 
-      {loading ? (
+      {tab === 'plan' ? (
+        <PlanView
+          aiAvailable={aiAvailable}
+          onLogFromPlan={(initial) => {
+            openLog(initial)
+            window.scrollTo({ top: 0, behavior: 'smooth' })
+          }}
+        />
+      ) : loading ? (
         <Spinner full />
       ) : tab === 'history' ? (
         <History workouts={workouts} onDelete={remove} />

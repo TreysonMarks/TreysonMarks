@@ -4,7 +4,10 @@ import type {
   ExerciseEntry,
   FoodEntry,
   ParsedFood,
+  ParsedPlanDay,
   ParsedWorkout,
+  PlanDay,
+  PlannedWorkout,
   Profile,
   Supplement,
   SupplementLog,
@@ -322,6 +325,89 @@ export async function deleteWorkout(id: string): Promise<void> {
   if (error) throw error
 }
 
+// ---------- plan: weekly template ----------
+export async function fetchPlanDays(userId: string): Promise<PlanDay[]> {
+  const { data, error } = await client()
+    .from('plan_days')
+    .select('*')
+    .eq('user_id', userId)
+    .order('weekday', { ascending: true })
+  if (error) throw error
+  return (data ?? []) as PlanDay[]
+}
+
+export async function upsertPlanDay(
+  userId: string,
+  day: Omit<PlanDay, 'id' | 'user_id' | 'created_at'>,
+): Promise<PlanDay> {
+  const { data, error } = await client()
+    .from('plan_days')
+    .upsert({ ...day, user_id: userId }, { onConflict: 'user_id,weekday' })
+    .select()
+    .single()
+  if (error) throw error
+  return data as PlanDay
+}
+
+export async function deletePlanDay(id: string): Promise<void> {
+  const { error } = await client().from('plan_days').delete().eq('id', id)
+  if (error) throw error
+}
+
+/** Replace the whole weekly template (used when applying an AI-generated plan). */
+export async function replacePlanTemplate(
+  userId: string,
+  days: ParsedPlanDay[],
+): Promise<PlanDay[]> {
+  await client().from('plan_days').delete().eq('user_id', userId)
+  const rows = days.map((d) => ({
+    user_id: userId,
+    weekday: d.weekday,
+    title: d.title,
+    type: d.type,
+    is_rest: d.is_rest,
+    notes: d.notes,
+    prescription: d.prescription,
+  }))
+  const { data, error } = await client().from('plan_days').insert(rows).select()
+  if (error) throw error
+  return (data ?? []) as PlanDay[]
+}
+
+// ---------- plan: one-off planned sessions ----------
+export async function fetchPlannedRange(
+  userId: string,
+  fromDate: string,
+  toDate: string,
+): Promise<PlannedWorkout[]> {
+  const { data, error } = await client()
+    .from('planned_workouts')
+    .select('*')
+    .eq('user_id', userId)
+    .gte('date', fromDate)
+    .lte('date', toDate)
+    .order('date', { ascending: true })
+  if (error) throw error
+  return (data ?? []) as PlannedWorkout[]
+}
+
+export async function addPlannedWorkout(
+  entry: Omit<PlannedWorkout, 'id' | 'created_at'>,
+): Promise<PlannedWorkout> {
+  const { data, error } = await client()
+    .from('planned_workouts')
+    .insert(entry)
+    .select()
+    .single()
+  if (error) throw error
+  return data as PlannedWorkout
+}
+
+export async function deletePlannedWorkout(id: string): Promise<void> {
+  const { error } = await client().from('planned_workouts').delete().eq('id', id)
+  if (error) throw error
+}
+
 // ---------- AI parsing (Edge Functions) ----------
 async function invokeFn<T>(name: string, body: Record<string, unknown>): Promise<T> {
   const { data, error } = await client().functions.invoke(name, { body })
@@ -349,4 +435,21 @@ export async function parseFood(text: string, categories: string[]): Promise<Par
 
 export async function parseWorkout(text: string): Promise<ParsedWorkout> {
   return invokeFn<ParsedWorkout>('parse-workout', { text })
+}
+
+export interface GeneratePlanInput {
+  goal: string
+  days_per_week: number
+  equipment: string
+  notes: string
+}
+
+export async function generatePlan(input: GeneratePlanInput): Promise<ParsedPlanDay[]> {
+  const data = await invokeFn<{ days?: ParsedPlanDay[] }>('generate-plan', {
+    goal: input.goal,
+    days_per_week: input.days_per_week,
+    equipment: input.equipment,
+    notes: input.notes,
+  })
+  return data?.days ?? []
 }

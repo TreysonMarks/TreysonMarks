@@ -38,11 +38,21 @@ interface Props {
   aiAvailable: boolean
   onSave: (w: NewWorkout) => Promise<void>
   onClose: () => void
+  /** Pre-seed the editor (e.g. "Log this" from a planned session). */
+  initial?: {
+    title: string
+    type: WorkoutType
+    date?: string
+    exercises: ParsedExercise[]
+  }
 }
 
-export default function LogWorkout({ aiAvailable, onSave, onClose }: Props) {
-  const [mode, setMode] = useState<'ai' | 'manual'>(aiAvailable ? 'ai' : 'manual')
-  const [draft, setDraft] = useState<Draft | null>(aiAvailable ? null : emptyDraft())
+export default function LogWorkout({ aiAvailable, onSave, onClose, initial }: Props) {
+  const seeded: Draft | null = initial
+    ? { ...emptyDraft(), title: initial.title, type: initial.type, date: initial.date ?? isoDay(), exercises: initial.exercises }
+    : null
+  const [mode, setMode] = useState<'ai' | 'manual'>(initial ? 'manual' : aiAvailable ? 'ai' : 'manual')
+  const [draft, setDraft] = useState<Draft | null>(seeded ?? (aiAvailable ? null : emptyDraft()))
 
   // AI parse state
   const [text, setText] = useState('')

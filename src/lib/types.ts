@@ -136,6 +136,49 @@ export interface ParsedWorkout {
   exercises: ParsedExercise[]
 }
 
+/** A prescribed movement in a plan (targets, not logged performance). */
+export interface PlanExercise {
+  name: string
+  sets: number | null
+  reps: string | null // "8-12", "5", "AMRAP"
+  weight: number | null
+  notes: string | null
+}
+
+export interface PlanDay {
+  id: string
+  user_id: string
+  weekday: number // 0 = Sunday ... 6 = Saturday
+  title: string
+  type: WorkoutType
+  is_rest: boolean
+  notes: string | null
+  prescription: PlanExercise[]
+  created_at?: string
+}
+
+export interface PlannedWorkout {
+  id: string
+  user_id: string
+  date: string
+  title: string
+  type: WorkoutType
+  is_rest: boolean
+  notes: string | null
+  prescription: PlanExercise[]
+  created_at?: string
+}
+
+/** A generated weekly template from the generate-plan Edge Function. */
+export interface ParsedPlanDay {
+  weekday: number
+  is_rest: boolean
+  title: string
+  type: WorkoutType
+  notes: string | null
+  prescription: PlanExercise[]
+}
+
 export interface ExerciseEntry {
   id: string
   user_id: string
