@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { clearConfig } from '../lib/config'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -65,6 +66,16 @@ export default function Login() {
           </p>
         </form>
       )}
+
+      <button
+        className="mt-4 text-center text-xs text-slate-600 hover:text-slate-400"
+        onClick={() => {
+          clearConfig()
+          window.location.reload()
+        }}
+      >
+        Change Supabase project
+      </button>
     </div>
   )
 }
