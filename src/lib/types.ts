@@ -80,6 +80,62 @@ export interface SupplementLog {
   created_at?: string
 }
 
+export type WorkoutType = 'strength' | 'conditioning' | 'cardio' | 'mixed'
+
+export interface StrengthSet {
+  reps: number
+  weight: number
+}
+
+export interface WorkoutExercise {
+  id: string
+  workout_id: string
+  user_id: string
+  name: string
+  sets: StrengthSet[]
+  distance_m: number | null
+  duration_sec: number | null
+  score: string | null
+  sort: number
+  created_at?: string
+}
+
+export interface Workout {
+  id: string
+  user_id: string
+  date: string
+  title: string
+  type: WorkoutType
+  notes: string | null
+  calories_burned: number
+  duration_min: number | null
+  rpe: number | null
+  created_at?: string
+}
+
+/** A workout joined with its exercises (used in the Workouts tab). */
+export interface WorkoutWithExercises extends Workout {
+  exercises: WorkoutExercise[]
+}
+
+/** Shape returned by the parse-workout Edge Function, pre-save. */
+export interface ParsedExercise {
+  name: string
+  sets: StrengthSet[]
+  distance_m: number | null
+  duration_sec: number | null
+  score: string | null
+}
+
+export interface ParsedWorkout {
+  title: string
+  type: WorkoutType
+  calories_burned: number
+  duration_min: number | null
+  notes: string | null
+  exercises: ParsedExercise[]
+}
+
 export interface ExerciseEntry {
   id: string
   user_id: string

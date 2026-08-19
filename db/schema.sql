@@ -104,6 +104,42 @@ create table if not exists public.supplement_logs (
 create index if not exists supplement_logs_user_idx
   on public.supplement_logs (user_id, supplement_id, taken_at);
 
+-- ---------- workouts (training sessions) ----------
+create table if not exists public.workouts (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  date date not null,
+  title text not null,
+  type text not null default 'mixed'
+    check (type in ('strength','conditioning','cardio','mixed')),
+  notes text,
+  calories_burned numeric not null default 0,
+  duration_min numeric,
+  rpe numeric, -- rate of perceived exertion 1-10 (optional)
+  created_at timestamptz not null default now()
+);
+create index if not exists workouts_user_date_idx on public.workouts (user_id, date);
+
+-- ---------- workout exercises (movements within a session) ----------
+create table if not exists public.workout_exercises (
+  id uuid primary key default gen_random_uuid(),
+  workout_id uuid not null references public.workouts (id) on delete cascade,
+  user_id uuid not null references auth.users (id) on delete cascade,
+  name text not null,
+  -- strength: sets is [{"reps": n, "weight": w}, ...]
+  sets jsonb not null default '[]'::jsonb,
+  -- cardio / conditioning fields (used when sets is empty)
+  distance_m numeric,
+  duration_sec numeric,
+  score text, -- e.g. "12 rounds", "Fran 4:32"
+  sort integer not null default 0,
+  created_at timestamptz not null default now()
+);
+create index if not exists workout_exercises_workout_idx
+  on public.workout_exercises (workout_id, sort);
+create index if not exists workout_exercises_user_name_idx
+  on public.workout_exercises (user_id, name);
+
 -- ---------- Row Level Security ----------
 alter table public.profiles enable row level security;
 alter table public.food_entries enable row level security;
@@ -112,6 +148,8 @@ alter table public.weight_logs enable row level security;
 alter table public.categories enable row level security;
 alter table public.supplements enable row level security;
 alter table public.supplement_logs enable row level security;
+alter table public.workouts enable row level security;
+alter table public.workout_exercises enable row level security;
 
 -- Reusable policy pattern: a user may only touch rows they own.
 do $$
@@ -120,7 +158,7 @@ declare
 begin
   foreach t in array array[
     'profiles','food_entries','exercise_entries','weight_logs',
-    'categories','supplements','supplement_logs'
+    'categories','supplements','supplement_logs','workouts','workout_exercises'
   ]
   loop
     execute format('drop policy if exists "own_select" on public.%I;', t);

@@ -5,16 +5,26 @@ import {
   addFood,
   deleteExercise,
   deleteFood,
+  deleteWorkout,
   fetchExercise,
   fetchFood,
+  fetchWorkoutsByDate,
 } from '../lib/api'
 import { baselineBurn, intakeTarget } from '../lib/tdee'
-import type { DayTotals, ExerciseEntry, FoodEntry, ParsedFood, Profile } from '../lib/types'
+import type {
+  DayTotals,
+  ExerciseEntry,
+  FoodEntry,
+  ParsedFood,
+  Profile,
+  Workout,
+} from '../lib/types'
 import { parseISO } from 'date-fns'
 
 export function computeTotals(
   food: FoodEntry[],
   exercise: ExerciseEntry[],
+  workouts: Workout[],
   profile: Profile | null,
   date: string,
 ): DayTotals {
@@ -22,7 +32,9 @@ export function computeTotals(
   const protein = food.reduce((s, f) => s + (f.protein_g ?? 0) * f.quantity, 0)
   const carbs = food.reduce((s, f) => s + (f.carbs_g ?? 0) * f.quantity, 0)
   const fat = food.reduce((s, f) => s + (f.fat_g ?? 0) * f.quantity, 0)
-  const exerciseBurn = exercise.reduce((s, e) => s + e.calories_burned, 0)
+  const exerciseBurn =
+    exercise.reduce((s, e) => s + e.calories_burned, 0) +
+    workouts.reduce((s, w) => s + w.calories_burned, 0)
   const on = parseISO(date)
   const baseline = profile ? baselineBurn(profile, on) : 0
   const target = profile ? intakeTarget(profile, on) : 0
@@ -46,14 +58,20 @@ export function useDay(date: string, profile: Profile | null) {
   const userId = session?.user.id
   const [food, setFood] = useState<FoodEntry[]>([])
   const [exercise, setExercise] = useState<ExerciseEntry[]>([])
+  const [workouts, setWorkouts] = useState<Workout[]>([])
   const [loading, setLoading] = useState(true)
 
   const load = useCallback(async () => {
     if (!userId) return
     setLoading(true)
-    const [f, e] = await Promise.all([fetchFood(userId, date), fetchExercise(userId, date)])
+    const [f, e, w] = await Promise.all([
+      fetchFood(userId, date),
+      fetchExercise(userId, date),
+      fetchWorkoutsByDate(userId, date),
+    ])
     setFood(f)
     setExercise(e)
+    setWorkouts(w)
     setLoading(false)
   }, [userId, date])
 
@@ -106,11 +124,17 @@ export function useDay(date: string, profile: Profile | null) {
     setExercise((prev) => prev.filter((e) => e.id !== id))
   }, [])
 
-  const totals = computeTotals(food, exercise, profile, date)
+  const removeWorkout = useCallback(async (id: string) => {
+    await deleteWorkout(id)
+    setWorkouts((prev) => prev.filter((w) => w.id !== id))
+  }, [])
+
+  const totals = computeTotals(food, exercise, workouts, profile, date)
 
   return {
     food,
     exercise,
+    workouts,
     totals,
     loading,
     logFood,
@@ -118,5 +142,6 @@ export function useDay(date: string, profile: Profile | null) {
     logExercise,
     removeFood,
     removeExercise,
+    removeWorkout,
   }
 }

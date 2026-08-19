@@ -4,10 +4,14 @@ import type {
   ExerciseEntry,
   FoodEntry,
   ParsedFood,
+  ParsedWorkout,
   Profile,
   Supplement,
   SupplementLog,
   WeightLog,
+  Workout,
+  WorkoutExercise,
+  WorkoutWithExercises,
 } from './types'
 
 function client() {
@@ -236,24 +240,113 @@ export async function deleteSupplementLog(id: string): Promise<void> {
   if (error) throw error
 }
 
-// ---------- AI food parsing (Edge Function) ----------
-export async function parseFood(text: string, categories: string[]): Promise<ParsedFood[]> {
-  const { data, error } = await client().functions.invoke('parse-food', {
-    body: { text, categories },
-  })
+// ---------- workouts ----------
+export async function fetchWorkouts(userId: string): Promise<WorkoutWithExercises[]> {
+  const { data, error } = await client()
+    .from('workouts')
+    .select('*, workout_exercises(*)')
+    .eq('user_id', userId)
+    .order('date', { ascending: false })
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return (data ?? []).map((w: Record<string, unknown>) => ({
+    ...(w as unknown as Workout),
+    exercises: ((w.workout_exercises ?? []) as WorkoutExercise[]).sort((a, b) => a.sort - b.sort),
+  })) as WorkoutWithExercises[]
+}
+
+export async function fetchWorkoutsByDate(userId: string, date: string): Promise<Workout[]> {
+  const { data, error } = await client()
+    .from('workouts')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('date', date)
+    .order('created_at', { ascending: true })
+  if (error) throw error
+  return (data ?? []) as Workout[]
+}
+
+export interface NewWorkout {
+  date: string
+  title: string
+  type: Workout['type']
+  notes: string | null
+  calories_burned: number
+  duration_min: number | null
+  rpe: number | null
+  exercises: Omit<WorkoutExercise, 'id' | 'workout_id' | 'user_id' | 'created_at' | 'sort'>[]
+}
+
+export async function createWorkout(userId: string, w: NewWorkout): Promise<WorkoutWithExercises> {
+  const { data: workout, error } = await client()
+    .from('workouts')
+    .insert({
+      user_id: userId,
+      date: w.date,
+      title: w.title,
+      type: w.type,
+      notes: w.notes,
+      calories_burned: w.calories_burned,
+      duration_min: w.duration_min,
+      rpe: w.rpe,
+    })
+    .select()
+    .single()
+  if (error) throw error
+
+  const rows = w.exercises.map((ex, i) => ({
+    workout_id: (workout as Workout).id,
+    user_id: userId,
+    name: ex.name,
+    sets: ex.sets,
+    distance_m: ex.distance_m,
+    duration_sec: ex.duration_sec,
+    score: ex.score,
+    sort: i,
+  }))
+
+  let exercises: WorkoutExercise[] = []
+  if (rows.length) {
+    const { data: exData, error: exErr } = await client()
+      .from('workout_exercises')
+      .insert(rows)
+      .select()
+    if (exErr) throw exErr
+    exercises = (exData ?? []) as WorkoutExercise[]
+  }
+  return { ...(workout as Workout), exercises }
+}
+
+export async function deleteWorkout(id: string): Promise<void> {
+  const { error } = await client().from('workouts').delete().eq('id', id)
+  if (error) throw error
+}
+
+// ---------- AI parsing (Edge Functions) ----------
+async function invokeFn<T>(name: string, body: Record<string, unknown>): Promise<T> {
+  const { data, error } = await client().functions.invoke(name, { body })
   if (error) {
     // Edge Function errors carry the JSON body in error.context when available.
     let message = error.message
     try {
       const ctx = (error as { context?: Response }).context
       if (ctx && typeof ctx.json === 'function') {
-        const body = await ctx.json()
-        if (body?.error) message = body.error
+        const parsed = await ctx.json()
+        if (parsed?.error) message = parsed.error
       }
     } catch {
       /* ignore */
     }
     throw new Error(message)
   }
-  return (data?.items ?? []) as ParsedFood[]
+  return data as T
+}
+
+export async function parseFood(text: string, categories: string[]): Promise<ParsedFood[]> {
+  const data = await invokeFn<{ items?: ParsedFood[] }>('parse-food', { text, categories })
+  return data?.items ?? []
+}
+
+export async function parseWorkout(text: string): Promise<ParsedWorkout> {
+  return invokeFn<ParsedWorkout>('parse-workout', { text })
 }

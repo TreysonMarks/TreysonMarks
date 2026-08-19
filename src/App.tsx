@@ -7,6 +7,7 @@ import Today from './pages/Today'
 import Trends from './pages/Trends'
 import ProfilePage from './pages/Profile'
 import Supplements from './pages/Supplements'
+import Workouts from './pages/Workouts'
 import Onboarding from './pages/Onboarding'
 import Spinner from './components/Spinner'
 
@@ -21,6 +22,7 @@ export default function App() {
     <Layout>
       <Routes>
         <Route path="/" element={<Today />} />
+        <Route path="/workouts" element={<Workouts />} />
         <Route path="/trends" element={<Trends />} />
         <Route path="/supplements" element={<Supplements />} />
         <Route path="/profile" element={<ProfilePage />} />

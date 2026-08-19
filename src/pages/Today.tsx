@@ -18,12 +18,14 @@ export default function Today() {
     food,
     exercise,
     totals,
+    workouts,
     loading,
     logFood,
     logFoods,
     logExercise,
     removeFood,
     removeExercise,
+    removeWorkout,
   } = useDay(date, profile)
 
   const isToday = date === isoDay()
@@ -110,6 +112,18 @@ export default function Today() {
             </h2>
             <QuickAdd onAdd={logExercise} />
             <div className="space-y-2">
+              {workouts.map((w) => (
+                <EntryRow
+                  key={w.id}
+                  title={`🏋 ${w.title}`}
+                  subtitle={[w.type, w.duration_min ? `${w.duration_min} min` : '']
+                    .filter(Boolean)
+                    .join(' · ')}
+                  value={`${Math.round(w.calories_burned)}`}
+                  tone="text-warn"
+                  onDelete={() => removeWorkout(w.id)}
+                />
+              ))}
               {exercise.map((e) => (
                 <EntryRow
                   key={e.id}
@@ -120,7 +134,9 @@ export default function Today() {
                   onDelete={() => removeExercise(e.id)}
                 />
               ))}
-              {exercise.length === 0 && <Empty>No exercise logged yet.</Empty>}
+              {exercise.length === 0 && workouts.length === 0 && (
+                <Empty>No exercise yet — log a session on the Workouts tab.</Empty>
+              )}
             </div>
           </section>
         </>

@@ -54,12 +54,13 @@ label — and have Claude fill in calories, protein/carbs/fat, and a category.
    ```bash
    supabase link --project-ref YOUR-PROJECT-REF
    ```
-2. Deploy the Edge Function:
+2. Deploy the Edge Functions (food + workout parsing):
    ```bash
    supabase functions deploy parse-food
+   supabase functions deploy parse-workout
    ```
 3. In the app, go to **Profile → AI food parsing**, paste your Anthropic API
-   key, pick a model, and save.
+   key, pick a model, and save. The same key powers workout parsing.
 
 Your key is stored in **your own** Supabase `profiles` row (row-level-security
 protected) and read only by the `parse-food` function server-side — it never
@@ -88,6 +89,11 @@ Supabase's redirect URLs (step 2).
 
 - **Today** — food + exercise ledger with a target ring, In/Out/Net, and a
   macro split. Add food by describing it (AI), pasting a label, or manually.
+- **Workouts** — log a session by describing it (Claude structures it into
+  exercises + sets and estimates a conservative burn) or by hand. Burn feeds the
+  ledger's "Out". Progress tab charts estimated 1RM per lift, weekly volume
+  (tonnage), and a personal-record feed. Calorie burn serves the deficit goal;
+  the training log serves the getting-stronger goal.
 - **Trends** — 7/14/30-day intake vs. burn, daily net, macros/day, calories by
   category, and weight with a 7-day average.
 - **Supplements** — define supplements with a dose and cadence (daily, weekly,
