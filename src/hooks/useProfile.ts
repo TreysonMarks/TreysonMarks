@@ -12,6 +12,8 @@ const DEFAULT_PROFILE = (userId: string): Profile => ({
   activity_level: 'light',
   goal_type: 'maintain',
   units: 'metric',
+  anthropic_key: null,
+  anthropic_model: 'claude-opus-5',
 })
 
 export function useProfile() {

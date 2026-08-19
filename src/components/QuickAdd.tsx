@@ -1,26 +1,21 @@
 import { useState } from 'react'
 
-type FoodAdd = (name: string, calories: number, quantity: number) => Promise<void>
-type ExerciseAdd = (name: string, calories: number, minutes: number | null) => Promise<void>
-
 interface Props {
-  kind: 'food' | 'exercise'
-  onAdd: FoodAdd | ExerciseAdd
+  onAdd: (name: string, caloriesBurned: number, minutes: number | null) => Promise<void>
 }
 
-export default function QuickAdd({ kind, onAdd }: Props) {
+/** Compact adder for exercise entries. */
+export default function QuickAdd({ onAdd }: Props) {
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
   const [calories, setCalories] = useState('')
-  const [extra, setExtra] = useState('') // quantity for food, minutes for exercise
+  const [minutes, setMinutes] = useState('')
   const [busy, setBusy] = useState(false)
-
-  const isFood = kind === 'food'
 
   function reset() {
     setName('')
     setCalories('')
-    setExtra('')
+    setMinutes('')
   }
 
   async function submit(e: React.FormEvent) {
@@ -29,13 +24,7 @@ export default function QuickAdd({ kind, onAdd }: Props) {
     if (!name.trim() || !Number.isFinite(cal)) return
     setBusy(true)
     try {
-      if (isFood) {
-        const qty = extra ? Number(extra) : 1
-        await (onAdd as FoodAdd)(name.trim(), cal, Number.isFinite(qty) && qty > 0 ? qty : 1)
-      } else {
-        const mins = extra ? Number(extra) : null
-        await (onAdd as ExerciseAdd)(name.trim(), cal, mins)
-      }
+      await onAdd(name.trim(), cal, minutes ? Number(minutes) : null)
       reset()
     } finally {
       setBusy(false)
@@ -44,11 +33,8 @@ export default function QuickAdd({ kind, onAdd }: Props) {
 
   if (!open) {
     return (
-      <button
-        className="btn-ghost w-full border-dashed text-slate-300"
-        onClick={() => setOpen(true)}
-      >
-        + Add {isFood ? 'food' : 'exercise'}
+      <button className="btn-ghost w-full border-dashed text-slate-300" onClick={() => setOpen(true)}>
+        + Add exercise
       </button>
     )
   }
@@ -58,13 +44,13 @@ export default function QuickAdd({ kind, onAdd }: Props) {
       <input
         autoFocus
         className="input"
-        placeholder={isFood ? 'e.g. Chicken burrito' : 'e.g. Morning run'}
+        placeholder="e.g. Morning run"
         value={name}
         onChange={(e) => setName(e.target.value)}
       />
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="label">{isFood ? 'Calories' : 'Calories burned'}</label>
+          <label className="label">Calories burned</label>
           <input
             className="input"
             type="number"
@@ -75,14 +61,14 @@ export default function QuickAdd({ kind, onAdd }: Props) {
           />
         </div>
         <div>
-          <label className="label">{isFood ? 'Servings' : 'Minutes'}</label>
+          <label className="label">Minutes</label>
           <input
             className="input"
             type="number"
             inputMode="decimal"
-            placeholder={isFood ? '1' : 'optional'}
-            value={extra}
-            onChange={(e) => setExtra(e.target.value)}
+            placeholder="optional"
+            value={minutes}
+            onChange={(e) => setMinutes(e.target.value)}
           />
         </div>
       </div>

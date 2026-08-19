@@ -1,14 +1,18 @@
 import { useState } from 'react'
 import { useProfile } from '../hooks/useProfile'
 import { useDay } from '../hooks/useDay'
+import { useCategories } from '../hooks/useCategories'
 import { isoDay, prettyDay, shiftDay } from '../lib/date'
 import ProgressRing from '../components/ProgressRing'
 import Spinner from '../components/Spinner'
 import QuickAdd from '../components/QuickAdd'
+import AddFood from '../components/AddFood'
 import EntryRow from '../components/EntryRow'
+import MacroBar from '../components/MacroBar'
 
 export default function Today() {
   const { profile, loading: profileLoading } = useProfile()
+  const { names: categoryNames } = useCategories()
   const [date, setDate] = useState(isoDay())
   const {
     food,
@@ -16,6 +20,7 @@ export default function Today() {
     totals,
     loading,
     logFood,
+    logFoods,
     logExercise,
     removeFood,
     removeExercise,
@@ -24,6 +29,7 @@ export default function Today() {
   const isToday = date === isoDay()
   const overTarget = totals.remaining < 0
   const consumedFraction = totals.target > 0 ? totals.intake / (totals.target + totals.exercise) : 0
+  const aiAvailable = Boolean(profile?.anthropic_key)
 
   return (
     <div className="space-y-5">
@@ -64,6 +70,7 @@ export default function Today() {
                 signed
               />
             </div>
+            <MacroBar protein={totals.protein} carbs={totals.carbs} fat={totals.fat} />
             <p className="text-xs text-slate-500">
               Target {totals.target} + {totals.exercise} exercise · baseline burn{' '}
               {totals.baselineBurn}
@@ -72,18 +79,21 @@ export default function Today() {
 
           {/* Food */}
           <section className="space-y-2">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">
-                Food · {totals.intake} kcal
-              </h2>
-            </div>
-            <QuickAdd kind="food" onAdd={logFood} />
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">
+              Food · {totals.intake} kcal
+            </h2>
+            <AddFood
+              categories={categoryNames}
+              aiAvailable={aiAvailable}
+              onAdd={logFood}
+              onAddMany={logFoods}
+            />
             <div className="space-y-2">
               {food.map((f) => (
                 <EntryRow
                   key={f.id}
                   title={f.name}
-                  subtitle={f.quantity !== 1 ? `${f.calories} × ${f.quantity}` : undefined}
+                  subtitle={foodSubtitle(f.category, f.quantity, f.protein_g, f.carbs_g, f.fat_g)}
                   value={`${Math.round(f.calories * f.quantity)}`}
                   tone="text-good"
                   onDelete={() => removeFood(f.id)}
@@ -98,7 +108,7 @@ export default function Today() {
             <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">
               Exercise · {totals.exercise} kcal
             </h2>
-            <QuickAdd kind="exercise" onAdd={logExercise} />
+            <QuickAdd onAdd={logExercise} />
             <div className="space-y-2">
               {exercise.map((e) => (
                 <EntryRow
@@ -117,6 +127,18 @@ export default function Today() {
       )}
     </div>
   )
+}
+
+function foodSubtitle(
+  category: string,
+  qty: number,
+  p: number,
+  c: number,
+  f: number,
+): string {
+  const macro = p || c || f ? `${Math.round(p * qty)}p ${Math.round(c * qty)}c ${Math.round(f * qty)}f` : ''
+  const q = qty !== 1 ? `×${qty}` : ''
+  return [category, q, macro].filter(Boolean).join(' · ')
 }
 
 function Stat({

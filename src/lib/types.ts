@@ -21,6 +21,8 @@ export interface Profile {
   activity_level: ActivityLevel
   goal_type: GoalType
   units: Units
+  anthropic_key?: string | null
+  anthropic_model?: string
   updated_at?: string
 }
 
@@ -31,6 +33,50 @@ export interface FoodEntry {
   name: string
   calories: number
   quantity: number
+  protein_g: number
+  carbs_g: number
+  fat_g: number
+  category: string
+  created_at?: string
+}
+
+/** A parsed-but-not-yet-saved food item from the AI parser. */
+export interface ParsedFood {
+  name: string
+  calories: number
+  protein_g: number
+  carbs_g: number
+  fat_g: number
+  category: string
+  quantity: number
+}
+
+export interface Category {
+  id: string
+  user_id: string
+  name: string
+  sort: number
+}
+
+export interface Supplement {
+  id: string
+  user_id: string
+  name: string
+  dose: number | null
+  dose_unit: string | null
+  cadence_days: number | null // 1 daily, 7 weekly, null/0 as-needed
+  notes: string | null
+  active: boolean
+  created_at?: string
+}
+
+export interface SupplementLog {
+  id: string
+  user_id: string
+  supplement_id: string
+  taken_at: string
+  dose: number | null
+  note: string | null
   created_at?: string
 }
 
@@ -60,4 +106,7 @@ export interface DayTotals {
   net: number
   target: number
   remaining: number
+  protein: number
+  carbs: number
+  fat: number
 }

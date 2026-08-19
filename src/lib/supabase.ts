@@ -1,17 +1,17 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import { getConfig } from './config'
 
-const url = import.meta.env.VITE_SUPABASE_URL as string | undefined
-const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
+const config = getConfig()
 
-/** True when the app has been given Supabase credentials. */
-export const isConfigured = Boolean(url && anonKey)
+/** True once the app has Supabase connection details (from storage or env). */
+export const isConfigured = Boolean(config)
 
 /**
- * The client is null until configured, so the UI can show a setup screen
- * instead of crashing when the .env is missing.
+ * Null until configured, so the UI can show the in-app setup flow instead of
+ * crashing. After the user saves config we reload the page to rebuild this.
  */
-export const supabase: SupabaseClient | null = isConfigured
-  ? createClient(url!, anonKey!, {
+export const supabase: SupabaseClient | null = config
+  ? createClient(config.url, config.anonKey, {
       auth: { persistSession: true, autoRefreshToken: true },
     })
   : null

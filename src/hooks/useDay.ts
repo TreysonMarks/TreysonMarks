@@ -9,7 +9,7 @@ import {
   fetchFood,
 } from '../lib/api'
 import { baselineBurn, intakeTarget } from '../lib/tdee'
-import type { DayTotals, ExerciseEntry, FoodEntry, Profile } from '../lib/types'
+import type { DayTotals, ExerciseEntry, FoodEntry, ParsedFood, Profile } from '../lib/types'
 import { parseISO } from 'date-fns'
 
 export function computeTotals(
@@ -19,6 +19,9 @@ export function computeTotals(
   date: string,
 ): DayTotals {
   const intake = food.reduce((s, f) => s + f.calories * f.quantity, 0)
+  const protein = food.reduce((s, f) => s + (f.protein_g ?? 0) * f.quantity, 0)
+  const carbs = food.reduce((s, f) => s + (f.carbs_g ?? 0) * f.quantity, 0)
+  const fat = food.reduce((s, f) => s + (f.fat_g ?? 0) * f.quantity, 0)
   const exerciseBurn = exercise.reduce((s, e) => s + e.calories_burned, 0)
   const on = parseISO(date)
   const baseline = profile ? baselineBurn(profile, on) : 0
@@ -32,6 +35,9 @@ export function computeTotals(
     net: Math.round(intake - totalOut),
     target,
     remaining: Math.round(target + exerciseBurn - intake),
+    protein: Math.round(protein),
+    carbs: Math.round(carbs),
+    fat: Math.round(fat),
   }
 }
 
@@ -56,10 +62,21 @@ export function useDay(date: string, profile: Profile | null) {
   }, [load])
 
   const logFood = useCallback(
-    async (name: string, calories: number, quantity: number) => {
+    async (item: ParsedFood) => {
       if (!userId) return
-      const created = await addFood({ user_id: userId, date, name, calories, quantity })
+      const created = await addFood({ user_id: userId, date, ...item })
       setFood((prev) => [...prev, created])
+    },
+    [userId, date],
+  )
+
+  const logFoods = useCallback(
+    async (items: ParsedFood[]) => {
+      if (!userId || items.length === 0) return
+      for (const item of items) {
+        const created = await addFood({ user_id: userId, date, ...item })
+        setFood((prev) => [...prev, created])
+      }
     },
     [userId, date],
   )
@@ -91,5 +108,15 @@ export function useDay(date: string, profile: Profile | null) {
 
   const totals = computeTotals(food, exercise, profile, date)
 
-  return { food, exercise, totals, loading, logFood, logExercise, removeFood, removeExercise }
+  return {
+    food,
+    exercise,
+    totals,
+    loading,
+    logFood,
+    logFoods,
+    logExercise,
+    removeFood,
+    removeExercise,
+  }
 }

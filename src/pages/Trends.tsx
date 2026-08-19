@@ -24,7 +24,7 @@ const RANGES = [7, 14, 30] as const
 export default function Trends() {
   const { profile } = useProfile()
   const [days, setDays] = useState<(typeof RANGES)[number]>(7)
-  const { points, weights, loading } = useTrends(days, profile)
+  const { points, weights, byCategory, loading } = useTrends(days, profile)
 
   const chartData = useMemo(
     () => points.map((p) => ({ ...p, label: shortDay(p.date) })),
@@ -126,6 +126,40 @@ export default function Trends() {
             </ResponsiveContainer>
           </ChartCard>
 
+          <ChartCard title="Macros (grams / day)">
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={chartData} margin={{ top: 8, right: 6, left: -18, bottom: 0 }}>
+                <CartesianGrid stroke="#1e2a44" vertical={false} />
+                <XAxis dataKey="label" tick={axisTick} interval="preserveStartEnd" />
+                <YAxis tick={axisTick} width={44} />
+                <Tooltip content={<DarkTooltip />} cursor={{ fill: '#ffffff08' }} />
+                <Bar dataKey="protein" name="Protein" stackId="m" fill="#34d399" />
+                <Bar dataKey="carbs" name="Carbs" stackId="m" fill="#38bdf8" />
+                <Bar dataKey="fat" name="Fat" stackId="m" fill="#fbbf24" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartCard>
+
+          <ChartCard title="By category">
+            {byCategory.length === 0 ? (
+              <p className="py-6 text-center text-sm text-slate-500">No food logged yet.</p>
+            ) : (
+              <div className="space-y-3">
+                {byCategory.map((c) => (
+                  <CategoryRow
+                    key={c.category}
+                    name={c.category}
+                    calories={c.calories}
+                    max={byCategory[0].calories}
+                    protein={c.protein}
+                    carbs={c.carbs}
+                    fat={c.fat}
+                  />
+                ))}
+              </div>
+            )}
+          </ChartCard>
+
           <ChartCard title="Weight">
             {weightData.length === 0 ? (
               <p className="py-8 text-center text-sm text-slate-500">
@@ -172,6 +206,38 @@ function ChartCard({ title, children }: { title: string; children: React.ReactNo
     <div className="card">
       <h2 className="mb-3 text-sm font-semibold text-slate-300">{title}</h2>
       {children}
+    </div>
+  )
+}
+
+function CategoryRow({
+  name,
+  calories,
+  max,
+  protein,
+  carbs,
+  fat,
+}: {
+  name: string
+  calories: number
+  max: number
+  protein: number
+  carbs: number
+  fat: number
+}) {
+  const width = max > 0 ? (calories / max) * 100 : 0
+  return (
+    <div>
+      <div className="mb-1 flex items-baseline justify-between text-sm">
+        <span className="text-slate-200">{name}</span>
+        <span className="tabular-nums text-slate-400">{calories} kcal</span>
+      </div>
+      <div className="h-2 w-full overflow-hidden rounded-full bg-base-border">
+        <div className="h-full rounded-full bg-accent" style={{ width: `${width}%` }} />
+      </div>
+      <div className="mt-1 text-xs text-slate-500">
+        {protein}g protein · {carbs}g carbs · {fat}g fat
+      </div>
     </div>
   )
 }

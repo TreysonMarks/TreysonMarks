@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useProfile } from '../hooks/useProfile'
+import { useCategories } from '../hooks/useCategories'
 import { supabase } from '../lib/supabase'
+import { clearConfig } from '../lib/config'
 import { useAuth } from '../context/AuthContext'
 import {
   ACTIVITY_LABELS,
@@ -30,6 +32,7 @@ import Spinner from '../components/Spinner'
 export default function ProfilePage() {
   const { session } = useAuth()
   const { profile, loading, save } = useProfile()
+  const categories = useCategories()
   const [draft, setDraft] = useState<Profile | null>(null)
   const [status, setStatus] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -218,6 +221,62 @@ export default function ProfilePage() {
         </div>
       </div>
 
+      {/* AI food parsing */}
+      <div className="card space-y-4">
+        <div>
+          <h2 className="text-sm font-semibold text-slate-300">AI food parsing</h2>
+          <p className="mt-1 text-xs text-slate-500">
+            Your Anthropic API key is stored in your own Supabase (row-level-security
+            protected) and used only by the parse-food function. Leave blank to log manually.
+          </p>
+        </div>
+        <div>
+          <label className="label">Anthropic API key</label>
+          <input
+            type="password"
+            className="input font-mono"
+            placeholder="sk-ant-..."
+            value={draft.anthropic_key ?? ''}
+            onChange={(e) => set('anthropic_key', e.target.value)}
+          />
+        </div>
+        <div>
+          <label className="label">Model</label>
+          <select
+            className="input"
+            value={draft.anthropic_model ?? 'claude-opus-5'}
+            onChange={(e) => set('anthropic_model', e.target.value)}
+          >
+            <option value="claude-opus-5">Claude Opus 5 — most capable</option>
+            <option value="claude-sonnet-5">Claude Sonnet 5 — balanced</option>
+            <option value="claude-haiku-4-5">Claude Haiku 4.5 — fastest / cheapest</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Categories */}
+      <div className="card space-y-3">
+        <h2 className="text-sm font-semibold text-slate-300">Food categories</h2>
+        <div className="flex flex-wrap gap-2">
+          {categories.categories.map((c) => (
+            <span
+              key={c.id}
+              className="inline-flex items-center gap-1.5 rounded-full border border-base-border bg-base-bg px-3 py-1 text-xs text-slate-200"
+            >
+              {c.name}
+              <button
+                onClick={() => categories.remove(c.id)}
+                className="text-slate-500 hover:text-bad"
+                aria-label={`Remove ${c.name}`}
+              >
+                ✕
+              </button>
+            </span>
+          ))}
+        </div>
+        <CategoryAdder onAdd={categories.add} />
+      </div>
+
       <div className="flex items-center gap-3">
         <button className="btn-primary flex-1" onClick={onSave} disabled={busy}>
           {busy ? 'Saving…' : 'Save profile'}
@@ -237,7 +296,44 @@ export default function ProfilePage() {
       >
         Sign out {session?.user.email ? `(${session.user.email})` : ''}
       </button>
+
+      <button
+        className="w-full text-center text-xs text-slate-600 hover:text-slate-400"
+        onClick={() => {
+          if (confirm('Disconnect this Supabase project from the app on this device?')) {
+            clearConfig()
+            window.location.reload()
+          }
+        }}
+      >
+        Disconnect Supabase
+      </button>
     </div>
+  )
+}
+
+function CategoryAdder({ onAdd }: { onAdd: (name: string) => Promise<void> }) {
+  const [name, setName] = useState('')
+  return (
+    <form
+      className="flex gap-2"
+      onSubmit={async (e) => {
+        e.preventDefault()
+        if (!name.trim()) return
+        await onAdd(name)
+        setName('')
+      }}
+    >
+      <input
+        className="input"
+        placeholder="Add a category"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+      />
+      <button type="submit" className="btn-ghost" disabled={!name.trim()}>
+        Add
+      </button>
+    </form>
   )
 }
 
