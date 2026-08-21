@@ -270,6 +270,17 @@ export async function fetchWorkoutsByDate(userId: string, date: string): Promise
   return (data ?? []) as Workout[]
 }
 
+/** Workouts (no exercises) from a start date, for trend burn totals. */
+export async function fetchWorkoutsRange(userId: string, fromDate: string): Promise<Workout[]> {
+  const { data, error } = await client()
+    .from('workouts')
+    .select('id, user_id, date, title, type, notes, calories_burned, duration_min, rpe')
+    .eq('user_id', userId)
+    .gte('date', fromDate)
+  if (error) throw error
+  return (data ?? []) as Workout[]
+}
+
 export interface NewWorkout {
   date: string
   title: string

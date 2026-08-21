@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { fetchExerciseRange, fetchFoodRange, fetchWeightRange } from '../lib/api'
+import {
+  fetchExerciseRange,
+  fetchFoodRange,
+  fetchWeightRange,
+  fetchWorkoutsRange,
+} from '../lib/api'
 import { baselineBurn, intakeTarget } from '../lib/tdee'
 import { isoDay, shiftDay } from '../lib/date'
 import type { Profile } from '../lib/types'
@@ -44,9 +49,10 @@ export function useTrends(days: number, profile: Profile | null) {
     setLoading(true)
     const from = shiftDay(isoDay(), -(days - 1))
 
-    const [food, exercise, weightLogs] = await Promise.all([
+    const [food, exercise, workouts, weightLogs] = await Promise.all([
       fetchFoodRange(userId, from),
       fetchExerciseRange(userId, from),
+      fetchWorkoutsRange(userId, from),
       fetchWeightRange(userId, from),
     ])
 
@@ -63,8 +69,11 @@ export function useTrends(days: number, profile: Profile | null) {
       const exBurn = exercise
         .filter((e) => e.date === date)
         .reduce((s, e) => s + e.calories_burned, 0)
+      const workoutBurn = workouts
+        .filter((w) => w.date === date)
+        .reduce((s, w) => s + (w.calories_burned ?? 0), 0)
       const baseline = baselineBurn(profile, on)
-      const out = baseline + exBurn
+      const out = baseline + exBurn + workoutBurn
       series.push({
         date,
         intake: Math.round(intake),

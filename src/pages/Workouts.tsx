@@ -66,6 +66,7 @@ export default function Workouts() {
       {logging && (
         <LogWorkout
           aiAvailable={aiAvailable}
+          bodyweightKg={profile?.weight_kg}
           initial={logInitial}
           onSave={async (w) => {
             await create(w)

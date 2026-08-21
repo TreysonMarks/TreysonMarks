@@ -4,6 +4,20 @@ import { parseWorkout } from '../lib/api'
 import type { ParsedExercise, WorkoutType } from '../lib/types'
 import { isoDay } from '../lib/date'
 
+// Conservative MET values per workout type, for a rough burn estimate.
+const MET_BY_TYPE: Record<WorkoutType, number> = {
+  strength: 4.5,
+  conditioning: 9,
+  cardio: 8,
+  mixed: 6,
+}
+
+/** kcal ≈ MET × bodyweight(kg) × hours. Kept conservative on purpose. */
+function estimateBurn(type: WorkoutType, durationMin: number, bodyweightKg: number): number {
+  if (!durationMin || !bodyweightKg) return 0
+  return Math.round(MET_BY_TYPE[type] * bodyweightKg * (durationMin / 60))
+}
+
 interface DraftExercise extends ParsedExercise {}
 
 interface Draft {
@@ -36,6 +50,7 @@ function emptyExercise(): DraftExercise {
 
 interface Props {
   aiAvailable: boolean
+  bodyweightKg?: number
   onSave: (w: NewWorkout) => Promise<void>
   onClose: () => void
   /** Pre-seed the editor (e.g. "Log this" from a planned session). */
@@ -47,7 +62,7 @@ interface Props {
   }
 }
 
-export default function LogWorkout({ aiAvailable, onSave, onClose, initial }: Props) {
+export default function LogWorkout({ aiAvailable, bodyweightKg, onSave, onClose, initial }: Props) {
   const seeded: Draft | null = initial
     ? { ...emptyDraft(), title: initial.title, type: initial.type, date: initial.date ?? isoDay(), exercises: initial.exercises }
     : null
@@ -191,7 +206,25 @@ export default function LogWorkout({ aiAvailable, onSave, onClose, initial }: Pr
           />
         </div>
         <div>
-          <label className="label">Calories burned</label>
+          <div className="flex items-center justify-between">
+            <label className="label">Calories burned</label>
+            {bodyweightKg ? (
+              <button
+                type="button"
+                className="mb-1.5 text-[11px] font-medium text-accent disabled:opacity-40"
+                disabled={!draft.duration_min}
+                title={draft.duration_min ? 'Estimate from type, duration & bodyweight' : 'Enter a duration first'}
+                onClick={() =>
+                  set(
+                    'calories_burned',
+                    estimateBurn(draft.type, draft.duration_min ?? 0, bodyweightKg),
+                  )
+                }
+              >
+                Estimate
+              </button>
+            ) : null}
+          </div>
           <input
             type="number"
             className="input"
