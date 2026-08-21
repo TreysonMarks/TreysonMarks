@@ -27,9 +27,13 @@ function fromStorage(): AppConfig | null {
   }
 }
 
-/** Stored config wins over env, so an in-app override always takes effect. */
+/**
+ * Baked-in env config wins when present (the deployed app), so the Connect
+ * screen never appears and nobody can point it elsewhere. Falls back to
+ * in-app stored config for local dev where no env vars are set.
+ */
 export function getConfig(): AppConfig | null {
-  return fromStorage() ?? fromEnv()
+  return fromEnv() ?? fromStorage()
 }
 
 export function saveConfig(config: AppConfig) {
