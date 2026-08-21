@@ -278,6 +278,11 @@ export default function ProfilePage() {
         <CategoryAdder onAdd={categories.add} />
       </div>
 
+      {/* Account password */}
+      <div className="card">
+        <SetPassword />
+      </div>
+
       {/* Data import */}
       <div className="card">
         <CsvImport />
@@ -315,6 +320,57 @@ export default function ProfilePage() {
         Disconnect Supabase
       </button>
     </div>
+  )
+}
+
+function SetPassword() {
+  const [password, setPassword] = useState('')
+  const [status, setStatus] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault()
+    if (password.length < 6) {
+      setStatus('Use at least 6 characters.')
+      return
+    }
+    setBusy(true)
+    setStatus(null)
+    const { error } = (await supabase?.auth.updateUser({ password })) ?? { error: null }
+    setBusy(false)
+    if (error) setStatus(error.message)
+    else {
+      setStatus('Password set ✓ — you can now sign in with it on your phone.')
+      setPassword('')
+    }
+  }
+
+  return (
+    <form onSubmit={save} className="space-y-3">
+      <div>
+        <h2 className="text-sm font-semibold text-slate-300">Account password</h2>
+        <p className="mt-1 text-xs text-slate-500">
+          Set a password so you can sign in reliably inside the installed phone app (magic links can
+          open in a separate browser).
+        </p>
+      </div>
+      <input
+        type="password"
+        className="input"
+        placeholder="New password"
+        autoComplete="new-password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+      />
+      <button type="submit" className="btn-ghost w-full" disabled={busy || !password}>
+        {busy ? 'Saving…' : 'Set password'}
+      </button>
+      {status && (
+        <p className={`text-sm ${status.startsWith('Password set') ? 'text-good' : 'text-bad'}`}>
+          {status}
+        </p>
+      )}
+    </form>
   )
 }
 

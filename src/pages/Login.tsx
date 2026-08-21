@@ -2,11 +2,28 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { clearConfig } from '../lib/config'
 
+type Mode = 'password' | 'magic'
+
 export default function Login() {
+  const [mode, setMode] = useState<Mode>('password')
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [sent, setSent] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+
+  async function signInPassword(e: React.FormEvent) {
+    e.preventDefault()
+    if (!supabase) return
+    setBusy(true)
+    setError(null)
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    })
+    setBusy(false)
+    if (error) setError(error.message)
+  }
 
   async function sendLink(e: React.FormEvent) {
     e.preventDefault()
@@ -37,11 +54,11 @@ export default function Login() {
             in.
           </p>
           <button className="btn-ghost mt-4 w-full" onClick={() => setSent(false)}>
-            Use a different email
+            Back
           </button>
         </div>
-      ) : (
-        <form onSubmit={sendLink} className="card space-y-4">
+      ) : mode === 'password' ? (
+        <form onSubmit={signInPassword} className="card space-y-4">
           <div>
             <label className="label" htmlFor="email">
               Email
@@ -57,12 +74,72 @@ export default function Login() {
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
+          <div>
+            <label className="label" htmlFor="password">
+              Password
+            </label>
+            <input
+              id="password"
+              type="password"
+              required
+              autoComplete="current-password"
+              className="input"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+          {error && <p className="text-sm text-bad">{error}</p>}
+          <button type="submit" className="btn-primary w-full" disabled={busy}>
+            {busy ? 'Signing in…' : 'Sign in'}
+          </button>
+          <button
+            type="button"
+            className="w-full text-center text-xs text-accent"
+            onClick={() => {
+              setMode('magic')
+              setError(null)
+            }}
+          >
+            Email me a magic link instead
+          </button>
+          <p className="text-center text-xs text-slate-500">
+            No password yet? Sign in with a magic link once, then set one in Profile.
+          </p>
+        </form>
+      ) : (
+        <form onSubmit={sendLink} className="card space-y-4">
+          <div>
+            <label className="label" htmlFor="email-magic">
+              Email
+            </label>
+            <input
+              id="email-magic"
+              type="email"
+              required
+              autoComplete="email"
+              className="input"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
           {error && <p className="text-sm text-bad">{error}</p>}
           <button type="submit" className="btn-primary w-full" disabled={busy}>
             {busy ? 'Sending…' : 'Send magic link'}
           </button>
+          <button
+            type="button"
+            className="w-full text-center text-xs text-accent"
+            onClick={() => {
+              setMode('password')
+              setError(null)
+            }}
+          >
+            Use email + password instead
+          </button>
           <p className="text-center text-xs text-slate-500">
-            No password. We email you a one-tap sign-in link.
+            On an installed phone app, prefer a password — magic links can open in a separate browser.
           </p>
         </form>
       )}
